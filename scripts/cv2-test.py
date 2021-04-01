@@ -1,72 +1,69 @@
 import cv2
 import numpy as np
 import time
+import teolib
 
+def setups():            
+    
+    #<----------------Test opencl------------------->
+    print('OpenCL available:', cv2.ocl.haveOpenCL())
+    #<---------------------------------------------->
 
-print('OpenCL available:', cv2.ocl.haveOpenCL())
-RawVid=cv2.VideoCapture(0)
+    #<----------------Start camera------------------>
+    data.cam=cv2.VideoCapture(0)
+    #<---------------------------------------------->
 
-NeuralNet=cv2.dnn.readNet('./models/darknet/yolov-tiny/yolov3-tiny.weights','./models/darknet/yolov-tiny/yolov3-tiny.cfg')
-NeuralNet.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
-NeuralNet.setPreferableTarget(cv2.dnn.DNN_TARGET_OPENCL)
+    #----------------Open Neural Net---------------->
+    data.net=cv2.dnn.readNet(
+                            './models/darknet/yolov-tiny/yolov3-tiny.weights',
+                            './models/darknet/yolov-tiny/yolov3-tiny.cfg'
+                            )
+    data.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
+    data.net.setPreferableTarget(cv2.dnn.DNN_TARGET_OPENCL)
+    #<---------------------------------------------->
 
-#fps=FPS().start()
+    #<----------------read classes------------------>
+    data.getclassnames(path="./models/darknet/coco.names")
+    
+    layernames = data.net.getLayerNames()
+    data.layers = [layernames[i[0] - 1] for i in data.net.getUnconnectedOutLayers()]
+    #<---------------------------------------------->
 
-
-
-#time.sleep(1)
-classes=[]
-with open("./models/darknet/coco.names", "r") as f:
-    classes = [line.strip() for line in f.readlines()]
-
-layernames = NeuralNet.getLayerNames()
-outputlayers = [layernames[i[0] - 1] for i in NeuralNet.getUnconnectedOutLayers()]
-
-
-colors = np.random.uniform(0, 255, size=(len(classes), 3))
-
-
+    #<--------------Set classes coloors------------->
+    data.classcolors = np.random.uniform(0, 255, size=(len(data.classnames), 3))
+    #<---------------------------------------------->
+    print("setup done")
+    return
 
 
 def runner():#outa,outb,outc,outd):
     cv2.namedWindow("main", cv2.WINDOW_AUTOSIZE)
+    cv2.namedWindow("veicle",cv2.WINDOW_AUTOSIZE)
+    net=data.net
     while(True):
-        #frame=frameBuffer.get()
-        #prevframe=None
-        #resp = urllib.request.urlopen(url)
-        #img = np.asarray(bytearray(resp.read()), dtype="uint8")
-        #frame = cv2.imdecode(img, cv2.IMREAD_COLOR)"""
-        ret,frame=RawVid.read()
-        #frame1=pyautogui.screenshot(region=(0,0,600,600))
-        #print(frame1)    
-
-        #frame=np.array(frame)
-        #frame=cv2.resize(frame, None, fx=0.6, fy=0.6)
-        height, width, channels=frame.shape
+        STIME=time.time()
+        ret,frame=data.cam.read()
+        height, width, _ =frame.shape
         #print("{}x{}".format(width,height))
         #height=800
         #width=800
         #frame=cv2.resize(frame,(width,height))
         #frame=cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
-        
+
         blob=cv2.dnn.blobFromImage(frame, 1 / 255.0, (height, width),swapRB=True, crop=False)
 
 
-        NeuralNet.setInput(blob)
-        outs=NeuralNet.forward(outputlayers)
-
+        net.setInput(blob)
+        outs=data.net.forward(data.layers)
+        
         class_ids=[]
         confidences=[]
         boxes=[]
-
+        veicle_frame=None
         for out in outs:
             for detection in out:
                 scores = detection[5:]
                 class_id = np.argmax(scores)
-                #print(scores)
-                #print(class_id)
-                #if class_id > 14:
-                #   class_id=14
                 confidence = scores[class_id]
                 #print(confidence)
                 if confidence > 0.6:
@@ -85,19 +82,25 @@ def runner():#outa,outb,outc,outd):
                     class_ids.append(class_id)
             
         indexes = cv2.dnn.NMSBoxes(boxes, confidences, 0.5, 0.4)
-        #colors = np.random.uniform(0, 255, size=(len(classes), 3))
+
         for i in range(len(boxes)):
             if i in indexes:
                 x, y, w, h = boxes[i]
-                label = str(classes[class_ids[i]])
-                color = colors[class_ids[i]]
+                label = str(data.classnames[class_ids[i]])
+                color = data.classcolors[class_ids[i]]
+                if class_ids[i] >= 2 or class_ids[i] <=4 and veicle_frame is None:
+                    veicle_frame=frame[y:y+h,x:x+w]
                 cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
                 cv2.putText(frame, label, (x, y -5),cv2.FONT_HERSHEY_SIMPLEX,
                 1/2, color, 2)
-        
+        Ttime=time.time()-STIME
+        cv2.rectangle(frame,(20,10),(40,60),(0,0,0),-1)
+        cv2.putText(frame,"Fps:{fps:.2f}".format(fps=1/Ttime),(20,10),cv2.FONT_HERSHEY_SIMPLEX,1/2,(50,200,50),2)
         #cv2.imshow("main",cv2.resize(frame,(800,600)))
         #cv2.resize(frame,(600,600)
         cv2.imshow("main",frame)
+        if veicle_frame is not None:
+            cv2.imshow("veicle",veicle_frame)
         #fps.update()
         #cv2.waitKey(0)
             
@@ -107,11 +110,18 @@ def runner():#outa,outb,outc,outd):
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-    RawVid.release ()
+    data.cam.release ()
     #fps.stop()
     cv2.destroyAllWindows()
 
 
 
 if __name__=="__main__":
+    data=teolib.sets()
+    try:
+        setups()
+    except cv2.error as e:
+        print(e)
+        exit(-1)
     runner()
+    print("everything done")

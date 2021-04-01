@@ -8,12 +8,10 @@ exit
 
 :test
 echo creating folders:
-md data
-md data\images
-md data\segmentations
-md output
-md output\preprocess_data
-md output\train_data
+md models
+md models\darknet
+md models\onnx
+md scripts
 tree
 pause
 EXIT /B 0
