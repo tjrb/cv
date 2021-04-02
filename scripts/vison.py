@@ -1,19 +1,20 @@
 """
-    vison is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    vison is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with vison.  If not, see <https://www.gnu.org/licenses/>6.
+*    Copyright (C) 2021 - Teófilo Batista <teob18@gmail.com>
+*
+*    vison is free software: you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation, either version 3 of the License, or
+*    (at your option) any later version.
+*
+*    vison is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.*
+*
+*
+*   You should have received a copy of the GNU General Public License
+*   along with vison.  If not, see <https://www.gnu.org/licenses/>6.
 """
-
-
 
 import cv2
 import numpy as np
@@ -27,7 +28,8 @@ def setups():
     #<---------------------------------------------->
 
     #<----------------Start camera------------------>
-    data.cam=cv2.VideoCapture(0)
+#    data.cam=cv2.VideoCapture(0)
+    data.setcam(0)
     #<---------------------------------------------->
 
     #----------------Open Neural Net---------------->
@@ -40,14 +42,14 @@ def setups():
     #<---------------------------------------------->
 
     #<----------------read classes------------------>
-    data.getclassnames(path="./models/darknet/coco.names")
-    
-    layernames = data.net.getLayerNames()
-    data.layers = [layernames[i[0] - 1] for i in data.net.getUnconnectedOutLayers()]
+    data.setclassnames(path="./models/darknet/coco.names")
+    data.setlayers()
+#    layernames = data.net.getLayerNames()
+#   data.layers = [layernames[i[0] - 1] for i in data.net.getUnconnectedOutLayers()]
     #<---------------------------------------------->
 
     #<--------------Set classes coloors------------->
-    data.classcolors = np.random.uniform(0, 255, size=(len(data.classnames), 3))
+#    data.classcolors = np.random.uniform(0, 255, size=(len(data.classnames), 3))
     #<---------------------------------------------->
     print("setup done")
     return
@@ -105,7 +107,7 @@ def runner():#outa,outb,outc,outd):
                 x, y, w, h = boxes[i]
                 label = str(data.classnames[class_ids[i]])
                 color = data.classcolors[class_ids[i]]
-                if class_ids[i] >= 2 or class_ids[i] <=4 and veicle_frame is None:
+                if class_ids[i] >= 2 and class_ids[i] <=4 and veicle_frame is None:
                     veicle_frame=frame[y:y+h,x:x+w]
                 cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
                 cv2.putText(frame, label, (x, y -5),cv2.FONT_HERSHEY_SIMPLEX,
@@ -135,6 +137,8 @@ def runner():#outa,outb,outc,outd):
 
 if __name__=="__main__":
     data=teolib.sets()
+    #data.setcam(0)
+
     try:
         setups()
     except cv2.error as e:
