@@ -20,7 +20,8 @@ or
 $ python -m pip install -r requirements.txt
 
 # run
-$ python cv2-test.py
+$ cd scripts
+$ python vision.py
 ```
 ## License
   This software is licenced under GNU General Public License Version 3  
