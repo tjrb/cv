@@ -20,36 +20,32 @@ import cv2
 import numpy as np
 import time
 import teolib
+import easyocr
 
 def setups():            
     
     #<----------------Test opencl------------------->
     print('OpenCL available:', cv2.ocl.haveOpenCL())
     #<---------------------------------------------->
+    
 
     #<----------------Start camera------------------>
 #    data.cam=cv2.VideoCapture(0)
     data.setcam(0)
     #<---------------------------------------------->
 
-    #----------------Open Neural Net---------------->
-    data.net=cv2.dnn.readNet(
-                            './models/darknet/yolov-tiny/yolov3-tiny.weights',
-                            './models/darknet/yolov-tiny/yolov3-tiny.cfg'
-                            )
+    #----------------load Neural Net---------------->
+    data.setnet(
+        './models/darknet/yolov-tiny/yolov3-tiny.weights',
+        './models/darknet/yolov-tiny/yolov3-tiny.cfg')
     data.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
     data.net.setPreferableTarget(cv2.dnn.DNN_TARGET_OPENCL)
     #<---------------------------------------------->
 
-    #<----------------read classes------------------>
+    #<----------------load classes------------------>
     data.setclassnames(path="./models/darknet/coco.names")
+    #<----------------set layers output------------------>
     data.setlayers()
-#    layernames = data.net.getLayerNames()
-#   data.layers = [layernames[i[0] - 1] for i in data.net.getUnconnectedOutLayers()]
-    #<---------------------------------------------->
-
-    #<--------------Set classes coloors------------->
-#    data.classcolors = np.random.uniform(0, 255, size=(len(data.classnames), 3))
     #<---------------------------------------------->
     print("setup done")
     return
@@ -59,15 +55,11 @@ def runner():#outa,outb,outc,outd):
     cv2.namedWindow("main", cv2.WINDOW_AUTOSIZE)
     cv2.namedWindow("veicle",cv2.WINDOW_AUTOSIZE)
     net=data.net
+    reader=easyocr.Reader(['en'])
     while(True):
         STIME=time.time()
         ret,frame=data.cam.read()
         height, width, _ =frame.shape
-        #print("{}x{}".format(width,height))
-        #height=800
-        #width=800
-        #frame=cv2.resize(frame,(width,height))
-        #frame=cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
 
         blob=cv2.dnn.blobFromImage(frame, 1 / 255.0, (height, width),swapRB=True, crop=False)
 
@@ -84,7 +76,6 @@ def runner():#outa,outb,outc,outd):
                 scores = detection[5:]
                 class_id = np.argmax(scores)
                 confidence = scores[class_id]
-                #print(confidence)
                 if confidence > 0.6:
                     # Object detected
                     center_x = int(detection[0] * width)
@@ -107,38 +98,37 @@ def runner():#outa,outb,outc,outd):
                 x, y, w, h = boxes[i]
                 label = str(data.classnames[class_ids[i]])
                 color = data.classcolors[class_ids[i]]
-                if class_ids[i] >= 2 and class_ids[i] <=4 and veicle_frame is None:
-                    veicle_frame=frame[y:y+h,x:x+w]
+                if veicle_frame is None:
+                    if class_ids[i] >= 2 and class_ids[i] <=4 :
+                        veicle_frame=frame[y:y+h,x:x+w]
                 cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
                 cv2.putText(frame, label, (x, y -5),cv2.FONT_HERSHEY_SIMPLEX,
                 1/2, color, 2)
         Ttime=time.time()-STIME
         cv2.rectangle(frame,(20,10),(40,60),(0,0,0),-1)
         cv2.putText(frame,"Fps:{fps:.2f}".format(fps=1/Ttime),(20,10),cv2.FONT_HERSHEY_SIMPLEX,1/2,(50,200,50),2)
-        #cv2.imshow("main",cv2.resize(frame,(800,600)))
-        #cv2.resize(frame,(600,600)
+
+
         cv2.imshow("main",frame)
         if veicle_frame is not None:
+            ##not realy working
+            veicle_frame_gray=cv2.cvtColor(veicle_frame,cv2.COLOR_BGR2GRAY)
+            veicle_frame_gray=cv2.adaptiveThreshold(veicle_frame_gray,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,11,5)
+            plate=reader.readtext(veicle_frame_gray)
+            print(plate)
             cv2.imshow("veicle",veicle_frame)
-        #fps.update()
-        #cv2.waitKey(0)
-            
-        #cv2.imshow('frame',frame)
         
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
     data.cam.release ()
-    #fps.stop()
     cv2.destroyAllWindows()
 
 
 
 if __name__=="__main__":
     data=teolib.sets()
-    #data.setcam(0)
-
     try:
         setups()
     except cv2.error as e:

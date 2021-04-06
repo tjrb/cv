@@ -1,4 +1,4 @@
 import py_compile
 
-script='scripts/teolib.py'
+script='<>'
 py_compile.compile(script,script+"c")

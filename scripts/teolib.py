@@ -31,6 +31,8 @@ class sets():
         else:
             self.classcolors=np.random.uniform(0, 255, size=(len(self.classnames), 3))
         self.layers=layers
+    def setnet(self,weights,cfg):
+        self.net=cv2.dnn.readNet(weights,cfg)
     
     def setcam(self,index):
         self.cam=cv2.VideoCapture(index)
