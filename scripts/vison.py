@@ -27,13 +27,11 @@ def setups():
     #<----------------Test opencl------------------->
     print('OpenCL available:', cv2.ocl.haveOpenCL())
     #<---------------------------------------------->
-    
-
+    #
     #<----------------Start camera------------------>
-#    data.cam=cv2.VideoCapture(0)
     data.setcam(0)
     #<---------------------------------------------->
-
+    #
     #----------------load Neural Net---------------->
     data.setnet(
         './models/darknet/yolov-tiny/yolov3-tiny.weights',
@@ -41,10 +39,12 @@ def setups():
     data.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
     data.net.setPreferableTarget(cv2.dnn.DNN_TARGET_OPENCL)
     #<---------------------------------------------->
-
+    #
     #<----------------load classes------------------>
     data.setclassnames(path="./models/darknet/coco.names")
-    #<----------------set layers output------------------>
+    #<---------------------------------------------->
+    #
+    #<-------------set layers output---------------->
     data.setlayers()
     #<---------------------------------------------->
     print("setup done")
