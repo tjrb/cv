@@ -1,2 +1,8 @@
+.gitignore
 scripts/teolib.py
-Full_script/scripts/__pycahe__/*
+scripts/tensor.py
+scripts/__pycahe__/*
+models/*
+deepLearn/models/*
+
+deepLearn/script/*
