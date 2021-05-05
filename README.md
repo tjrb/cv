@@ -8,6 +8,8 @@ more details about the net on https://pjreddie.com/
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Generic badge](https://img.shields.io/badge/Status-development-<COLOR>.svg)](https://shields.io/)
 
+[![windows](https://img.shields.io/badge/plataform-pending-orange?style=plastic&logo=windows)
+[![android](https://img.shields.io/badge/plataform-failing-red?style=plastic&logo=windows)
 ## How to run
 ```bash
 # clone repository
