@@ -9,6 +9,9 @@ from kivy.clock import Clock
 from kivy.graphics.texture import Texture
 import cv2
 
+from android.permissions import request_permissions, Permission
+request_permissions([Permission.CAMERA])
+
 class KivyCamera(Image):
     def __init__(self, capture, fps, **kwargs):
         super(KivyCamera, self).__init__(**kwargs)

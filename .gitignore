@@ -2,7 +2,11 @@
 scripts/teolib.py
 scripts/tensor.py
 scripts/__pycahe__/*
+scripts/android.py
 models/*
 deepLearn/models/*
-
 deepLearn/script/*
+buildozer.sh
+android-1/*
+.vscode/*
+*.db
