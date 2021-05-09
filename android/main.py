@@ -18,43 +18,82 @@ from kivymd.uix.button import MDFloatingActionButtonSpeedDial
 from kivymd.icon_definitions import md_icons
 #from kivymd.theming import ThemeManager
 #from cv2 import VideoCapture ,flip
-import cv2 
+import cv2
+import numpy as np
 
-class backside():
+
+class backside:
     #def __init__(self,flipmode=False):
     #    self.flipmode=flipmode
     flipmode=False
 
-    def process_frame(self,frame):
+    def process_frame(frame):
         # Process frame with opencv
-        if self.flipmode :
+        if backside.flipmode :
             out=cv2.flip(frame,0).tostring()
         else:
             out=cv2.flip(frame,1).tostring()
         return out
 
+    def reshape_frame(frame):
+        #arr = np.fromstring(frame, 'uint8').reshape((720, 640))
+        frame = np.frombuffer(self._camera._buffer.tostring(), 'uint8').reshape((h + h // 2, w))
+        arr = cv2.cvtColor(arr, 93)  # NV21 -> BGR
+        arr = cv2.resize(arr,(640,480))
+        return arr
+
+
+
 class CvCamera(Camera):
+    counter=0
     def __init__(self,**kwargs):
         self.flipmode=1
         super(CvCamera, self).__init__(**kwargs)
         
     def _camera_loaded(self, *largs):
         if kivy.platform=='android':
-            self.texture = Texture.create(size=self.resolution,colorfmt='bgr')
+            self.texture = Texture.create(size=np.flip(self.resolution),colorfmt='rgb')
             self.texture_size = list(self.texture.size)
         else:
             super(CvCamera, self)._camera_loaded()
 
     def on_tex(self, *l):
-        if kivy.platform=='android':
-            buf = self._camera.grab_frame()
-            if not buf:
+        if kivy.platform == 'android':
+            #buf = self._camera.grab_frame()
+            if self._camera._buffer is None:
+                print("no frame")
                 return
-            frame = self._camera.decode_frame(buf)
-            #buf = self.process_frame(frame)
-            buf=backside.process_frame(frame)
-            self.texture.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
+            ##frame = self._camera.decode_frame(buf) #-- original
+            #h,w =self.resolution
+            #frame=backside.reshape_frame(buf) # -- my try
+            frame=self.frame_from_buf()
+            self.frame_to_screen(frame)
+
+        else:
+            ret, frame = self._camera._device.read()
+            if frame is None:
+                print("No frame")
+
+          
+
+        #buf=backside.process_frame(frame=frame)
+        #self.texture.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
         super(CvCamera, self).on_tex(*l)
+
+    def frame_from_buf(self):
+        w, h = self.resolution
+        frame = np.frombuffer(self._camera._buffer.tostring(), 'uint8').reshape((h + h // 2, w))
+        frame_bgr = cv2.cvtColor(frame, 93)
+        return np.rot90(frame_bgr, 3)
+
+    def frame_to_screen(self, frame):
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        #cv2.putText(frame_rgb, str(self.counter), (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+        #self.counter += 1
+        flipped = np.flip(frame_rgb, 0)
+        buf = flipped.tostring()
+        self.texture.blit_buffer(buf, colorfmt='rgb', bufferfmt='ubyte')
+    pass
 
 class HomeScreen(Screen):
     
@@ -100,9 +139,7 @@ class MainApp(MDApp):
         super().__init__(**kwargs)
     
     def on_start(self,**kwargs):
-        if kivy.platform == "android":
-            from android.permissions import request_permissions, Permission
-            request_permissions([Permission.CAMERA])
+        pass
         
     def switch_theme_style(self,mode):
         
@@ -117,4 +154,7 @@ class MainApp(MDApp):
 if __name__=="__main__":    
     #sm=ScreenManager(WindowManager)
     #request_permissions([Permission.CAMERA])
+    if kivy.platform == "android":
+            from android.permissions import request_permissions, Permission
+            request_permissions([Permission.CAMERA])
     MainApp().run()
