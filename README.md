@@ -9,7 +9,7 @@ more details about the net on https://pjreddie.com/
 [![Generic badge](https://img.shields.io/badge/Status-development-<COLOR>.svg)](https://shields.io/)
 
 ![windows](https://img.shields.io/badge/plataform-pending-orange?style=plastic&logo=windows)
-![android](https://img.shields.io/badge/plataform-failing-red?style=plastic&logo=windows)
+![android](https://img.shields.io/badge/plataform-failing-red?style=plastic&logo=android)
 ## How to run
 ```bash
 # clone repository
